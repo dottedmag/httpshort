@@ -45,3 +45,14 @@ func (t Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	t.Handler.ServeHTTP(recorder, req)
 	return recorder.Result(), nil
 }
+
+// Client is a helper function that returns a http.Client with
+// Transport from this package.
+func Client(ctx context.Context, handler http.Handler) *http.Client {
+	return &http.Client{
+		Transport: &Transport{
+			Context: ctx,
+			Handler: handler,
+		},
+	}
+}

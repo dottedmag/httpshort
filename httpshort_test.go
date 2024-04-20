@@ -11,9 +11,6 @@ import (
 
 func ExampleTransport() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "index")
-	})
 	mux.HandleFunc("POST /size", func(w http.ResponseWriter, r *http.Request) {
 		// Check passed header
 		if r.Header.Get("Content-Type") != "text/plain" {
@@ -39,16 +36,6 @@ func ExampleTransport() {
 		},
 	}
 
-	// Check that GET / returns the expected text
-
-	respGet := must.OK1(client.Get("/"))
-	defer respGet.Body.Close()
-
-	fmt.Println("GET / response status:", respGet.Status)
-	fmt.Println("GET / response body:", string(must.OK1(io.ReadAll(respGet.Body))))
-
-	// Check that POST /size successfully reads the body
-
 	respPost := must.OK1(client.Post("/size", "text/plain", strings.NewReader("1234")))
 	defer respPost.Body.Close()
 
@@ -57,10 +44,26 @@ func ExampleTransport() {
 	fmt.Println("POST /size response body:", string(must.OK1(io.ReadAll(respPost.Body))))
 
 	// Output:
-	// GET / response status: 200 OK
-	// GET / response body: index
-	//
 	// POST /size response status: 200 OK
 	// POST /size response Content-Type: x-text/digits
 	// POST /size response body: 4
+}
+
+func ExampleClient() {
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "index")
+	})
+
+	client := Client(nil, mux)
+
+	resp := must.OK1(client.Get("/"))
+	defer resp.Body.Close()
+
+	fmt.Println("GET / response status:", resp.Status)
+	fmt.Println("GET / response body:", string(must.OK1(io.ReadAll(resp.Body))))
+
+	// Output:
+	// GET / response status: 200 OK
+	// GET / response body: index
 }
