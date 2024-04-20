@@ -1,10 +1,10 @@
 # Go library for short-cutting HTTP clients to HTTP handlers
 [![Go Reference](https://pkg.go.dev/badge/github.com/dottedmag/httpshort.svg)](https://pkg.go.dev/github.com/dottedmag/httpshort)
 
-Your client code uses a `http.Client`.
-Your server code contains a `http.Handler`.
+Your client code uses an `http.Client`.
+Your server code contains an `http.Handler`.
 
-This package implements a `http.RoundTripper` that allows a HTTP client
+This package implements an `http.RoundTripper` that allows a HTTP client
 to call a HTTP handler directly without starting a HTTP server.
 
     mux := http.NewServeMux()
