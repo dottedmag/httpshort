@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"path"
 )
 
 // Transport is an http.RoundTripper that directly calls the HTTP handler
@@ -30,16 +31,24 @@ func (t Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	switch {
 	case t.Context == nil:
 		// keep the original context (nil or non-nil)
+		if req.Context() == nil {
+			req = req.Clone(context.Background())
+		} else {
+			req = req.Clone(req.Context())
+		}
 	case t.Context != nil && req.Context() == nil:
 		// assign the context to the request that doesn't have one
-		req = req.WithContext(t.Context)
+		req = req.Clone(t.Context)
 	default:
 		// merge context cancellations
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		context.AfterFunc(t.Context, cancel)
-		req = req.WithContext(ctx)
+		req = req.Clone(ctx)
 	}
+
+	// Clean the path like DefaltServeMux mux does
+	req.URL.Path = path.Clean(req.URL.Path)
 
 	recorder := httptest.NewRecorder()
 	t.Handler.ServeHTTP(recorder, req)

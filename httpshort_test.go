@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"testing"
 
 	"github.com/dottedmag/must"
 )
@@ -66,4 +67,22 @@ func ExampleClient() {
 	// Output:
 	// GET / response status: 200 OK
 	// GET / response body: index
+}
+
+func TestPathCleaning(t *testing.T) {
+	var actualPath string
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		actualPath = r.URL.Path
+	})
+
+	client := Client(nil, mux)
+
+	resp := must.OK1(client.Get("///foobar/././foo///"))
+	defer resp.Body.Close()
+
+	if actualPath != "/foobar/foo" {
+		t.Errorf("Expected ///foobar to be cleaned to /foobar/foo, didn't happen, got %q instead", actualPath)
+	}
 }
