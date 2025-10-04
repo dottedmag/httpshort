@@ -86,3 +86,17 @@ func TestPathCleaning(t *testing.T) {
 		t.Errorf("Expected ///foobar to be cleaned to /foobar/foo, didn't happen, got %q instead", actualPath)
 	}
 }
+
+func TestRequest(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {})
+
+	client := Client(nil, mux)
+
+	resp := must.OK1(client.Get("/"))
+	defer resp.Body.Close()
+
+	if resp.Request == nil {
+		t.Fatal("resp.Request fails")
+	}
+}

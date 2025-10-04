@@ -52,7 +52,9 @@ func (t Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	recorder := httptest.NewRecorder()
 	t.Handler.ServeHTTP(recorder, req)
-	return recorder.Result(), nil
+	result := recorder.Result()
+	result.Request = req
+	return result, nil
 }
 
 // Client is a helper function that returns an http.Client.
