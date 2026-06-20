@@ -5,7 +5,29 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path"
+	"strings"
 )
+
+// cleanPath mirrors net/http.cleanPath: it normalises the path with
+// path.Clean but preserves a trailing slash so subtree patterns keep
+// matching. See go/src/net/http/server.go.
+func cleanPath(p string) string {
+	if p == "" {
+		return "/"
+	}
+	if p[0] != '/' {
+		p = "/" + p
+	}
+	np := path.Clean(p)
+	if p[len(p)-1] == '/' && np != "/" {
+		if len(p) == len(np)+1 && strings.HasPrefix(p, np) {
+			np = p
+		} else {
+			np += "/"
+		}
+	}
+	return np
+}
 
 // Transport is an http.RoundTripper that directly calls the HTTP handler
 //
@@ -47,8 +69,8 @@ func (t Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		req = req.Clone(ctx)
 	}
 
-	// Clean the path like DefaltServeMux mux does
-	req.URL.Path = path.Clean(req.URL.Path)
+	// Clean the path like net/http.ServeMux does
+	req.URL.Path = cleanPath(req.URL.Path)
 
 	recorder := httptest.NewRecorder()
 	t.Handler.ServeHTTP(recorder, req)

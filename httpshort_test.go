@@ -82,8 +82,35 @@ func TestPathCleaning(t *testing.T) {
 	resp := must.OK1(client.Get("///foobar/././foo///"))
 	defer resp.Body.Close()
 
-	if actualPath != "/foobar/foo" {
-		t.Errorf("Expected ///foobar to be cleaned to /foobar/foo, didn't happen, got %q instead", actualPath)
+	if actualPath != "/foobar/foo/" {
+		t.Errorf("Expected ///foobar/././foo/// to clean to /foobar/foo/, got %q", actualPath)
+	}
+}
+
+// TestPathCleaningPreservesTrailingSlashSubtree exercises the bug
+// fixed by mirroring net/http.cleanPath: a request to "/admin/" must
+// reach the registered "/admin/" subtree handler directly, not be
+// stripped to "/admin" and bounce off ServeMux's add-trailing-slash
+// redirect. Following redirects on the default http.Client would
+// loop until "stopped after 10 redirects" without the fix.
+func TestPathCleaningPreservesTrailingSlashSubtree(t *testing.T) {
+	var hit bool
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/admin/", func(w http.ResponseWriter, r *http.Request) {
+		hit = true
+	})
+
+	client := Client(nil, mux)
+
+	resp := must.OK1(client.Get("/admin/"))
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("got status %d, want 200", resp.StatusCode)
+	}
+	if !hit {
+		t.Fatal("/admin/ handler not invoked; request was stripped to /admin")
 	}
 }
 
